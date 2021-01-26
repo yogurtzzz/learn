@@ -4,7 +4,9 @@
 
 在通信时，HTTP协议会区分请求者，和响应者。或者客户端，和服务端。由客户端，发送HTTP请求给服务端，告知需要的资源。由服务端，发送HTTP响应给客户端，返回客户端需要的资源。遵循HTTP协议的二进制流，称为HTTP报文。客户端向服务端发送的报文，称为**HTTP请求报文**。服务端向客户端发送的报文，称为**HTTP响应报文**。它们的格式分别定义如下。
 
-### HTTP请求报文<a id="request">
+<a id="request">
+
+### HTTP请求报文
 
 先来看一个实际的HTTP请求报文。打开FireFox浏览器，按下F12打开开发者工具，在地址栏输入`www.baidu.com`，敲下回车，能够看到发出了如下的HTTP请求。
 
@@ -374,3 +376,418 @@ Uniform Resource Locator，**统一资源定位符**。在使用浏览器访问w
 
 
 
+#### HTTP常用头部
+
+HTTP报文中有一些非常常用的头部，在进行接口调用时，最重要的一个请求头莫过于`Content-Type`
+
+##### Content-Type
+
+这个头部，用于指定报文主体中的数据的格式（**请求报文**和**响应报文**中均可使用该头部），在前后端交互中，最常用的有3种：
+
+- `application/x-www-form-urlencoded`
+- `application/json`
+- `multipart/form-data`
+
+下面以调用后端接口为例，对该头部的三种取值做一个简单说明
+
+###### 表单数据
+
+对于第一种，当提交表单数据时，浏览器会自动在请求头中加入`Content-Type:application/x-www-form-urlencoded`，此时请求体中的数据格式类似于`user=yogurt&password=123&age=17`，后端若采用Spring，则可以用`@RequestParam`注解来获取，当方法的形参名称和请求体中参数名称一致时，可以不用加`@RequestParam`注解），代码示例如下
+
+```java
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class SimpleController {
+
+	@PostMapping("/test")
+	public String test(String user, String password, int age) {
+		System.out.println("user = " + user + ", password = " + password + ", age = " + age);
+		return "success";
+	}
+}
+```
+
+我们用POSTMAN发出一个请求，请求上述接口
+
+![](https://img-blog.csdnimg.cn/20210114163922487.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+查看抓包情况
+
+![](https://img-blog.csdnimg.cn/20210114164053898.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+查看应用控制台输出
+
+![](https://img-blog.csdnimg.cn/20210114170017347.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+###### JSON数据
+
+对第二种，当用POST方法提交JSON格式的数据时，需要在请求头中加上`Content-Type: application/json`，此时请求体中的内容就是一个JSON格式的字符串，后端若采用Spring，则可以用`@RequestBody`来将JSON字符串自动封装成一个JAVA对象，代码示例如下
+
+```java
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class SimpleController {
+
+	@PostMapping("/json")
+	public String json(@RequestBody Person person) {
+		System.out.println(person.toString());
+		return "success";
+	}
+}
+```
+
+其中，Person类定义如下
+
+```java
+public class Person {
+
+	private String name;
+	private Integer age;
+	private String school;
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public void setAge(Integer age) {
+		this.age = age;
+	}
+
+	public void setSchool(String school) {
+		this.school = school;
+	}
+
+	@Override
+	public String toString() {
+		return "Person{" +
+				"name='" + name + '\'' +
+				", age=" + age +
+				", school='" + school + '\'' +
+				'}';
+	}
+}
+```
+
+我们用POSTMAN发起一个请求，请求上面的`/json`接口
+
+![](https://img-blog.csdnimg.cn/20210116212453741.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+查看抓包情况如下
+
+![](https://img-blog.csdnimg.cn/2021011621282416.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+查看应用控制台输出如下
+
+![](https://img-blog.csdnimg.cn/20210116213035543.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+###### 文件数据
+
+对第三种，通常是用在文件上传的场景，后端若采用Spring，可以用`MultipartFile`类来接收上传的文件，示例代码如下
+
+```java
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
+
+@RestController
+public class SimpleController {
+	
+	@PostMapping("/file")
+	public String file(MultipartFile file) throws IOException {
+		String fileName = file.getName();
+		byte[] bytes = file.getBytes();
+		String fileContent = new String(bytes);
+		return "fileName: " + fileName + "\nfileContent: " + fileContent;
+	}
+	
+}
+```
+
+我们用POSTMAN提交一个请求，上传一个文件，文件内容如下
+
+![](https://img-blog.csdnimg.cn/20210116220117694.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+POSTMAN请求如下
+
+![](https://img-blog.csdnimg.cn/20210116220553161.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+抓包情况如下（由于报文内容较长，直接复制报文内容，而不采用截图）
+
+请求报文：
+
+```
+POST http://127.0.0.1:8025/file HTTP/1.1
+User-Agent: PostmanRuntime/7.26.8
+Accept: */*
+Cache-Control: no-cache
+Postman-Token: 0c6504d5-b71c-4b28-8e1f-d770596a796f
+Host: 127.0.0.1:8025
+Accept-Encoding: gzip, deflate, br
+Connection: keep-alive
+Content-Type: multipart/form-data; boundary=--------------------------604727261679510540033606
+Content-Length: 261
+
+----------------------------604727261679510540033606
+Content-Disposition: form-data; name="file"; filename="test.txt"
+Content-Type: text/plain
+
+我是谁？
+我从哪儿来？
+我要到哪儿去？
+----------------------------604727261679510540033606--
+
+```
+
+响应报文：
+
+```
+HTTP/1.1 200
+Content-Type: text/plain;charset=UTF-8
+Content-Length: 89
+Date: Sat, 16 Jan 2021 14:05:13 GMT
+Keep-Alive: timeout=60
+Connection: keep-alive
+
+fileName: 
+test.txt
+fileContent: 
+我是谁？
+我从哪儿来？
+我要到哪儿去？
+```
+
+说完上传文件，下面说一下下载文件的场景，这涉及到另一个HTTP头部：`Content-Disposition`
+
+##### Content-Disposition
+
+使用说明：
+
+使用`response.getOutputStream()`获取一个输出流，往输出流中写入字节数组。
+
+随后，设置响应头`Content-Disposition`，有2种设置方法
+
+- `Content-Disposition: attachment;filename=xxx.txt`
+- `Content-Disposition: inline;filename=xxx.txt`
+
+设置为`attachment`，则浏览器会以附件的形式保存文件，默认文件名为`xxx.txt`
+
+设置为`inline`，当浏览器支持该文件类型时，会直接在浏览器打开文件
+
+在文件下载时，我们设置为`attachment`，这样，浏览器会激活**文件下载**（有的浏览器会弹出文件下载对话框，有的浏览器会直接下载），使用示例如下
+
+假设我的服务器上有如下一张图片`AW.jpeg`
+
+![](https://img-blog.csdnimg.cn/2021011622213262.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+我想提供一个接口，使得别人能够下载这张图片
+
+后端代码如下
+
+```java
+import org.springframework.http.HttpHeaders;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+@Controller
+public class SimpleController {
+
+	@GetMapping("/img")
+	public void file(HttpServletResponse response) throws IOException {
+		String imgPath = "E:\\AW.jpeg";
+		Path path = Paths.get(imgPath);
+		FileInputStream in = new FileInputStream(path.toFile());
+		ServletOutputStream outputStream = response.getOutputStream();
+		byte[] buffer = new byte[1024];
+		int len;
+		while ((len = in.read(buffer)) != -1) {
+			outputStream.write(buffer, 0, len);
+		}
+		response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=AW2.jpeg");
+	}
+
+}
+```
+
+使用浏览器请求`/img`接口，发现并没有如预期一样弹出下载窗口，而是直接在浏览器端展示了图片
+
+![](https://img-blog.csdnimg.cn/20210116232751197.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+我开始纳闷了，于是按F12打开调试工具，再次请求，发现一个奇怪的现象，响应头中，没有`Content-Disposition`
+
+![](https://img-blog.csdnimg.cn/20210116232857802.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+而我在后端代码中是设置了该响应头的。也就是说，我设置的响应头失效了。于是我开始了抓虫（debug）之旅
+
+我先是增加了一个下载简单的`txt`文本文件的接口，如下
+
+```java
+	@GetMapping("/txt")
+	public void txt(HttpServletResponse response) throws IOException {
+		response.setCharacterEncoding("utf-8");  // 设置response流中的字符编码
+		response.getWriter().write("我是谁，我从哪儿来，我要到哪儿去");
+		response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=question.txt");
+	}
+```
+
+在浏览器端访问，发现按照预期打开了文件下载对话框
+
+![](https://img-blog.csdnimg.cn/20210116233431516.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+在下面的开发者工具栏，查看请求的情况，发现`Content-Disposition`是有成功被添加的
+
+![](https://img-blog.csdnimg.cn/20210116233520306.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+经过一系列查找，发现`ServletResponse`中有一个方法`isCommitted()`，查看源码中的注释
+
+![](https://img-blog.csdnimg.cn/20210116233907787.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+根据注释，一个 "已被提交" 的`response`，其**响应状态码**和**响应头**已经被`written`。
+
+于是我在`/img`和`/txt`两个接口添加响应头的代码前面，将`response`的`isCommitted()`打印出来
+
+```java
+	@GetMapping("/img")
+	public void file(HttpServletResponse response) throws IOException {
+		String imgPath = "E:\\AW.jpeg";
+		Path path = Paths.get(imgPath);
+		FileInputStream in = new FileInputStream(path.toFile());
+		ServletOutputStream outputStream = response.getOutputStream();
+		byte[] buffer = new byte[1024];
+		int len;
+		while ((len = in.read(buffer)) != -1) {
+			outputStream.write(buffer, 0, len);
+		}
+		System.out.println("/img接口被请求, isCommitted = " + response.isCommitted());
+		response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=AW2.jpeg");
+	}
+
+	@GetMapping("/txt")
+	public void txt(HttpServletResponse response) throws IOException {
+		response.setCharacterEncoding("utf-8");  // 设置response流中的字符编码
+		response.getWriter().write("我是谁，我从哪儿来，我要到哪儿去");
+		System.out.println("/txt接口被请求, isCommitted = " + response.isCommitted());
+		response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=question.txt");
+	}
+```
+
+然后再分别用浏览器请求2个接口
+
+![](https://img-blog.csdnimg.cn/20210116234518538.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+发现在`/img`接口中，添加响应头之前，`response`已经被`commit`过，而`/txt`接口，`response`还没有被`commit`。所以就导致了`/img`接口最后添加响应头失效，而`/txt`接口没有失效。于是问题就变成了，什么时候会触发`response`的`commit`呢？
+
+经过查询资料，发现在我上面的案例中，极有可能是`response`中的缓冲区已满，触发了缓冲区数据的`flush`，导致`response`变为已提交状态，从而导致随后对响应头的设置失效（已提交的`response`，响应状态码和响应头都无法更改了）。
+
+下面修改代码进行验证
+
+```java
+	@GetMapping("/img")
+	public void file(HttpServletResponse response) throws IOException {
+		String imgPath = "E:\\AW.jpeg";
+		Path path = Paths.get(imgPath);
+		FileInputStream in = new FileInputStream(path.toFile());
+		ServletOutputStream outputStream = response.getOutputStream();
+		byte[] buffer = new byte[1024];
+		int len;
+		int sumLen = 0;
+		int bufferSize = response.getBufferSize();
+		System.out.println("bufferSize = " + bufferSize);
+		while ((len = in.read(buffer)) != -1) {
+			outputStream.write(buffer, 0, len);
+			sumLen += len;
+			System.out.println("sumLen = " + sumLen);
+			System.out.println("isCommitted = " + response.isCommitted());
+			System.out.println("==========================");
+		}
+		System.out.println("/img接口被请求, isCommitted = " + response.isCommitted());
+		response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=AW2.jpeg");
+	}
+```
+
+打印的内容很多，选取关键的信息展示如下
+
+![](https://img-blog.csdnimg.cn/20210117001817713.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+可以看到，确实是由于response的缓冲区已满，触发了response的提交。想要细究的话，可以查看附录的[debug过程](#debug)
+
+所以，我们只要在一开始就把响应头设置好，就可以了。
+
+```java
+	@GetMapping("/img")
+	public void file(HttpServletResponse response) throws IOException {
+		response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=AW2.jpeg");
+		String imgPath = "E:\\AW.jpeg";
+		Path path = Paths.get(imgPath);
+		FileInputStream in = new FileInputStream(path.toFile());
+		ServletOutputStream outputStream = response.getOutputStream();
+		byte[] buffer = new byte[1024];
+		int len;
+		while ((len = in.read(buffer)) != -1) {
+			outputStream.write(buffer, 0, len);
+		}
+	}
+```
+
+修改后，在浏览器访问，发现按照预期弹出了文件下载对话框
+
+![](https://img-blog.csdnimg.cn/20210117004043488.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+
+
+<a id="debug"/>
+
+#### Debug过程
+
+关于response缓冲区已满导致response提交，无法更改响应头的debug过程
+
+![](https://img-blog.csdnimg.cn/20210117002147927.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+
+
+![](https://img-blog.csdnimg.cn/20210117002223346.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+![](https://img-blog.csdnimg.cn/20210117002252819.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+![](https://img-blog.csdnimg.cn/202101170110342.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+![](https://img-blog.csdnimg.cn/20210117002401483.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+![](https://img-blog.csdnimg.cn/20210117002426412.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+![](https://img-blog.csdnimg.cn/20210117002500222.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+![](https://img-blog.csdnimg.cn/20210117002750628.png)
+
+![](https://img-blog.csdnimg.cn/20210117002825936.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+![](https://img-blog.csdnimg.cn/2021011700285759.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+![](https://img-blog.csdnimg.cn/20210117002924170.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+![](https://img-blog.csdnimg.cn/20210117003049718.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+![](https://img-blog.csdnimg.cn/2021011700313134.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+![](https://img-blog.csdnimg.cn/20210117003206808.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+然后我们调用`response.isCommitted()`
+
+![](https://img-blog.csdnimg.cn/20210117003338294.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
+
+![](https://img-blog.csdnimg.cn/20210117003413115.png)
+
+![](https://img-blog.csdnimg.cn/20210117003437135.png)
+
+![](https://img-blog.csdnimg.cn/20210117003505567.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZjajEwMDk3ODQ4MTQ=,size_16,color_FFFFFF,t_70)
